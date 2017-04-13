@@ -3,29 +3,50 @@ let clearTimeout;
 
 if (typeof global !== 'undefined') {
     setTimeout = global.setTimeout;
-    clearTimeout = global.setTimeout;
+    clearTimeout = global.clearTimeout;
 } else {
     setTimeout = window.setTimeout;
     clearTimeout = window.clearTimeout;
 }
 
 export interface IMutexOptions {
-    intervalMs: number;
-    autoUnlockTimeoutMs: number;
+    /**
+     * Inteval of polling captured mutex
+     */
+    intervalMs?: number;
+    /**
+     * Timeout of auto-unlocking mutex
+     */
+    autoUnlockTimeoutMs?: number;
+    /**
+     * Custom Promise
+     */
     Promise?: PromiseConstructor;
 }
 
 export class Mutex {
+    /**
+     * Default mutex options.
+     * @type {IMutexOptions}
+     */
     public static readonly DEFAULT_OPTIONS: IMutexOptions = {
         intervalMs: 50,
         autoUnlockTimeoutMs: 3000
     };
 
+    /**
+     * Map of captured mutex keys.
+     * @type {{}}
+     */
     protected storage: {} = {};
+
+    /**
+     * Current mutex instance options.
+     */
     protected options: IMutexOptions;
 
     constructor(options?: IMutexOptions) {
-        const SelectedPromise = Promise || options.Promise;
+        const SelectedPromise = options.Promise || Promise;
 
         if (!SelectedPromise) {
             throw new Error(
@@ -40,13 +61,28 @@ export class Mutex {
         };
     }
 
+    /**
+     * Try to capture mutex by provided key.
+     * @see checkMutexAndLock
+     * @param key
+     * @returns {Promise<()=>void>}
+     */
     public capture(key: string): Promise<() => void> {
         return new this.options.Promise<() => void>((resolve, reject) => {
-            this.checkMutexLock(key, resolve, reject);
+            this.checkMutexAndLock(key, resolve, reject);
         });
     }
 
-    protected checkMutexLock(key: string, resolve: (arg: any) => void, reject: (arg: any) => void): void {
+    /**
+     * Checks inner storage for key. If key not exists - sets new key.
+     * If key is exists - waits for key deletion.
+     * Resolves with function - key deleter.
+     *
+     * @param key
+     * @param resolve
+     * @param reject
+     */
+    protected checkMutexAndLock(key: string, resolve: (arg: any) => void, reject: (arg: any) => void): void {
         if (!this.storage[key]) {
             this.storage[key] = true;
 
@@ -59,7 +95,7 @@ export class Mutex {
                 delete this.storage[key];
             });
         } else {
-            setTimeout(this.checkMutexLock.bind(this, key, resolve, reject), this.options.intervalMs);
+            setTimeout(this.checkMutexAndLock.bind(this, key, resolve, reject), this.options.intervalMs);
         }
     }
 }

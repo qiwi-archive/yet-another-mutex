@@ -1,13 +1,15 @@
 import {Mutex} from '../lib/mutex';
-
+import * as bluebird from 'bluebird';
 type TDone = (arg?: any) => void;
 
 describe('mutex', function(): void {
     let currentCase = 0;
+    const oldPromise = Promise;
 
     beforeEach(function(done: TDone): void {
         // TODO
         currentCase++;
+        Promise = oldPromise;
         done();
     });
 
@@ -46,25 +48,20 @@ describe('mutex', function(): void {
 
     it('should unlock', function(done: TDone): void {
         const mutex = new Mutex();
-        const func = function(): Promise<void> {
-            return new Promise<void>((resolve, reject) => {
-                mutex.capture('key')
-                    .then((unlock) => {
-                        setTimeout(() => {
-                            done();
-                        }, 100);
-                    })
-                    .catch((err) => {
-                        done(err);
-                    });
-            });
-        };
-
-        func();
-
         mutex.capture('key').then((unlock) => {
-            unlock();
+            setTimeout(() => {
+                unlock();
+            }, 300);
         });
+
+        mutex.capture('key')
+            .then((unlock) => {
+                unlock();
+                done();
+            })
+            .catch((err) => {
+                done(err);
+            });
     });
 
     it('should process keys for capturing', function(done: TDone): void {
@@ -80,12 +77,25 @@ describe('mutex', function(): void {
     it('should have default timeout of 3000ms', function(done: TDone): void {
         const mutex = new Mutex();
         this.timeout(4000);
-        mutex.capture('key');
+        mutex.capture('anotherKey');
         setTimeout(() => {
-            mutex.capture('key')
+            mutex.capture('anotherKey')
                 .then((unlock) => {
                     done();
                 });
         }, 3000);
+    });
+
+    it('should use custom Promise', function(done: TDone): void {
+        Promise = null;
+
+        const mutex = new Mutex({
+            Promise: bluebird
+        });
+
+        mutex.capture('test')
+            .then((unlock) => {
+                done();
+            });
     });
 });

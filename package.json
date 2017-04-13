@@ -18,6 +18,7 @@
   "author": "dylukanin@gmail.com",
   "license": "MIT",
   "devDependencies": {
+    "@types/bluebird": "^3.5.2",
     "@types/chai": "^3.5.0",
     "@types/mocha": "^2.2.40",
     "@types/node": "^7.0.12",
