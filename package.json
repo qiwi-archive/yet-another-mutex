@@ -1,0 +1,31 @@
+{
+  "name": "yet-another-mutex",
+  "version": "0.0.1",
+  "description": "Yet another simple mutex. With typescript definitions.",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha build/test/*",
+    "build": "tsc",
+    "watch": "tsc --watch",
+    "lint": "tslint './src/**/*.ts' --type-check --project tsconfig.json"
+  },
+  "keywords": [
+    "mutex",
+    "lock",
+    "typescript"
+  ],
+  "author": "dylukanin@gmail.com",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/chai": "^3.5.0",
+    "@types/mocha": "^2.2.40",
+    "@types/node": "^7.0.12",
+    "@types/object-assign": "^4.0.30",
+    "bluebird": "^3.5.0",
+    "chai": "^3.5.0",
+    "mocha": "^3.2.0",
+    "tslint": "^5.1.0",
+    "typescript": "^2.2.2"
+  },
+  "dependencies": {}
+}

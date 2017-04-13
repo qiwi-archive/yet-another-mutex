@@ -1,0 +1,15 @@
+{
+    "compilerOptions": {
+        "module": "umd",
+        "target": "es5",
+        "noImplicitAny": false,
+        "removeComments": true,
+        "noLib": false,
+        "declaration": true,
+        "rootDir": "./src",
+        "declarationDir": "./build",
+        "outDir": "./build",
+        "sourceMap": false,
+        "lib": ["es5", "es2015.promise", "DOM"]
+    }
+}
