@@ -7,7 +7,8 @@
     "test": "mocha build/test/*",
     "build": "tsc",
     "watch": "tsc --watch",
-    "lint": "tslint './src/**/*.ts' --type-check --project tsconfig.json"
+    "lint": "tslint './src/**/*.ts' --type-check --project tsconfig.json",
+    "karma": "karma start"
   },
   "keywords": [
     "mutex",
@@ -23,7 +24,13 @@
     "@types/object-assign": "^4.0.30",
     "bluebird": "^3.5.0",
     "chai": "^3.5.0",
+    "karma": "^1.6.0",
+    "karma-chrome-launcher": "^2.0.0",
+    "karma-firefox-launcher": "^1.0.1",
+    "karma-mocha": "^1.3.0",
+    "karma-requirejs": "^1.1.0",
     "mocha": "^3.2.0",
+    "requirejs": "^2.3.3",
     "tslint": "^5.1.0",
     "typescript": "^2.2.2"
   },

@@ -1,5 +1,13 @@
-const setTimeout: (func: () => void, ms: number) => void = global.setTimeout || window.setTimeout;
-const clearTimeout: (timer: any) => void = global.clearTimeout || window.clearTimeout;
+let setTimeout;
+let clearTimeout;
+
+if (typeof global !== 'undefined') {
+    setTimeout = global.setTimeout;
+    clearTimeout = global.setTimeout;
+} else {
+    setTimeout = window.setTimeout;
+    clearTimeout = window.clearTimeout;
+}
 
 export interface IMutexOptions {
     intervalMs: number;
