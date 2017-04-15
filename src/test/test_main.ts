@@ -47,6 +47,36 @@ describe('mutex', function (): void {
         lastFunction(2);
     });
 
+    it('loads', function (done: TDone): void {
+        const mutex = new Mutex();
+        const key = 'key';
+        let globalFnIndex: number = 0;
+        const lastIndex: number = 1000;
+
+        this.timeout(4000);
+
+        const mutexCapturingFunction = function (fnIndex: number): void {
+            mutex.capture(key)
+                .then((unlock) => {
+                    if (fnIndex !== globalFnIndex) {
+                        done('Mutex should not be captured');
+                    }
+                    globalFnIndex++;
+                    unlock();
+                    if (fnIndex === lastIndex) {
+                        done();
+                    }
+                })
+                .catch((err) => {
+                    done(err);
+                });
+        };
+
+        for (let i: number = 0; i <= lastIndex; i++) {
+            mutexCapturingFunction(i);
+        }
+    });
+
     it('should unlock', function (done: TDone): void {
         const mutex = new Mutex();
         mutex.capture('key').then((unlock) => {
