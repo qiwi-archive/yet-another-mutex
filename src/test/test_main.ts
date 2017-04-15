@@ -26,7 +26,7 @@ describe('mutex', function (): void {
                         done('Mutex should not be captured');
                     }
                     globalFnIndex++;
-                    setTimeout(unlock, 200);
+                    setTimeout(unlock, Math.random() * 200);
                 }
             );
         };
@@ -42,9 +42,11 @@ describe('mutex', function (): void {
             });
         };
 
-        timeoutedUnlockFunction(0);
-        timeoutedUnlockFunction(1);
-        lastFunction(2);
+        let i: number = 0;
+        for (i; i <= 5; i++) {
+            timeoutedUnlockFunction(i);
+        }
+        lastFunction(i);
     });
 
     it('loads', function (done: TDone): void {
@@ -117,16 +119,16 @@ describe('mutex', function (): void {
         }, Mutex.DEFAULT_OPTIONS.autoUnlockTimeoutMs);
     });
 
-    it('should use custom Promise', function(done: TDone): void {
-        Promise = null;
-
-        const mutex = new Mutex({
-            Promise: bluebird
-        });
-
-        mutex.capture('test')
-            .then((unlock) => {
-                done();
-            });
-    });
+    // it('should use custom Promise', function(done: TDone): void {
+    //     Promise = null;
+    //
+    //     const mutex = new Mutex({
+    //         Promise: bluebird
+    //     });
+    //
+    //     mutex.capture('test')
+    //         .then((unlock) => {
+    //             done();
+    //         });
+    // });
 });
