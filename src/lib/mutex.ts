@@ -11,10 +11,6 @@ if (typeof global !== 'undefined') {
 
 export interface IMutexOptions {
     /**
-     * Inteval of polling captured mutex
-     */
-    intervalMs?: number;
-    /**
      * Timeout of auto-unlocking mutex
      */
     autoUnlockTimeoutMs?: number;
@@ -30,72 +26,57 @@ export class Mutex {
      * @type {IMutexOptions}
      */
     public static readonly DEFAULT_OPTIONS: IMutexOptions = {
-        intervalMs: 50,
-        autoUnlockTimeoutMs: 3000
+        autoUnlockTimeoutMs: 3000,
+        Promise: Promise
     };
 
     /**
      * Map of captured mutex keys.
      * @type {{}}
      */
-    protected storage: {} = {};
+    protected _storage: {} = {};
 
     /**
      * Current mutex instance options.
      */
-    protected options: IMutexOptions;
+    protected _options: IMutexOptions;
 
-    constructor(options?: IMutexOptions) {
-        const SelectedPromise = options.Promise || Promise;
-
-        if (!SelectedPromise) {
+    constructor(options: IMutexOptions = Mutex.DEFAULT_OPTIONS) {
+        this._options = {
+            Promise: options.Promise || Mutex.DEFAULT_OPTIONS.Promise,
+            autoUnlockTimeoutMs: options.autoUnlockTimeoutMs || Mutex.DEFAULT_OPTIONS.autoUnlockTimeoutMs
+        };
+        if (!this._options.Promise) {
             throw new Error(
                 'Could not get native Promise in current env. Please pass custom Promise lib to constructor options'
             );
         }
-
-        this.options = {
-            Promise: SelectedPromise,
-            intervalMs: (options && options.intervalMs) || Mutex.DEFAULT_OPTIONS.intervalMs,
-            autoUnlockTimeoutMs: (options && options.autoUnlockTimeoutMs) || Mutex.DEFAULT_OPTIONS.autoUnlockTimeoutMs
-        };
     }
 
     /**
-     * Try to capture mutex by provided key.
+     * Captures mutex by provided key.
      * @see checkMutexAndLock
      * @param key
      * @returns {Promise<()=>void>}
      */
-    public capture(key: string): Promise<() => void> {
-        return new this.options.Promise<() => void>((resolve, reject) => {
-            this.checkMutexAndLock(key, resolve, reject);
-        });
-    }
-
-    /**
-     * Checks inner storage for key. If key not exists - sets new key.
-     * If key is exists - waits for key deletion.
-     * Resolves with function - key deleter.
-     *
-     * @param key
-     * @param resolve
-     * @param reject
-     */
-    protected checkMutexAndLock(key: string, resolve: (arg: any) => void, reject: (arg: any) => void): void {
-        if (!this.storage[key]) {
-            this.storage[key] = true;
-
-            const timeout = setTimeout(() => {
-                delete this.storage[key];
-            }, this.options.autoUnlockTimeoutMs);
-
-            resolve(() => {
-                clearTimeout(timeout);
-                delete this.storage[key];
-            });
-        } else {
-            setTimeout(this.checkMutexAndLock.bind(this, key, resolve, reject), this.options.intervalMs);
+    public async capture(key: string): Promise<() => void> {
+        while (this._storage[key]) {
+            //wait for lucky mutex release
+            await this._storage[key].promise as Promise<void>;
         }
+        this._storage[key] = {};
+        //capturing mutex with a promise which will be released when promise is resolved
+        this._storage[key].promise = new this._options.Promise<void>((resolve, reject) => {
+            // providing an unlock function which releases a mutex
+            let unlock = () => {
+                clearTimeout(this._storage[key].timeout);
+                delete this._storage[key];
+                resolve();
+            };
+            unlock.bind(this);
+            this._storage[key].timeout = setTimeout(unlock, this._options.autoUnlockTimeoutMs);
+            this._storage[key].unlock = unlock;
+        });
+        return this._storage[key].unlock;
     }
 }

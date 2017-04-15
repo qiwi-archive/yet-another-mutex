@@ -2,51 +2,52 @@ import {Mutex} from '../lib/mutex';
 import * as bluebird from 'bluebird';
 type TDone = (arg?: any) => void;
 
-describe('mutex', function(): void {
-    let currentCase = 0;
-    const oldPromise = Promise;
-
-    beforeEach(function(done: TDone): void {
-        // TODO
-        currentCase++;
-        Promise = oldPromise;
-        done();
-    });
-
-    it('should lock', function(done: TDone): void {
+describe('mutex', function (): void {
+    it('should lock', function (done: TDone): void {
         const mutex = new Mutex();
-        const testCase: number = currentCase;
+        const key = 'key';
+        let globalFnIndex: number = 0;
 
-        const firstFunction = function(): Promise<void> {
+        this.timeout(4000);
+
+        const mutexCapturingFunction = function (then): Promise<void> {
             return new Promise<void>((resolve, reject) => {
-                mutex.capture('key')
-                    .then((unlock) => {
-                        setTimeout(() => {
-                            done();
-                        }, 1000);
-                    })
+                mutex.capture(key)
+                    .then(then)
                     .catch((err) => {
                         done(err);
                     });
             });
         };
 
-        const secondFunction = function(): Promise<void> {
-            return new Promise<void>((resolve, reject) => {
-                mutex.capture('key')
-                    .then((unlock) => {
-                        if (currentCase === testCase) {
-                            done('Mutex should not be captured');
-                        }
-                    });
+        const timeoutedUnlockFunction = function (fnIndex: number): Promise<void> {
+            return mutexCapturingFunction((unlock) => {
+                    if (fnIndex !== globalFnIndex) {
+                        done('Mutex should not be captured');
+                    }
+                    globalFnIndex++;
+                    setTimeout(unlock, 200);
+                }
+            );
+        };
+
+        const lastFunction = function (fnIndex: number): Promise<void> {
+            return mutexCapturingFunction((unlock) => {
+                unlock();
+                if (fnIndex !== globalFnIndex) {
+                    done('Mutex should not be captured');
+                } else {
+                    done();
+                }
             });
         };
 
-        firstFunction();
-        secondFunction();
+        timeoutedUnlockFunction(0);
+        timeoutedUnlockFunction(1);
+        lastFunction(2);
     });
 
-    it('should unlock', function(done: TDone): void {
+    it('should unlock', function (done: TDone): void {
         const mutex = new Mutex();
         mutex.capture('key').then((unlock) => {
             setTimeout(() => {
@@ -64,7 +65,7 @@ describe('mutex', function(): void {
             });
     });
 
-    it('should process keys for capturing', function(done: TDone): void {
+    it('should process keys for capturing', function (done: TDone): void {
         const mutex = new Mutex();
 
         mutex.capture('firstKey');
@@ -74,7 +75,7 @@ describe('mutex', function(): void {
             });
     });
 
-    it('should have default timeout of 3000ms', function(done: TDone): void {
+    it('should have default timeout', function (done: TDone): void {
         const mutex = new Mutex();
         this.timeout(4000);
         mutex.capture('anotherKey');
@@ -83,7 +84,7 @@ describe('mutex', function(): void {
                 .then((unlock) => {
                     done();
                 });
-        }, 3000);
+        }, Mutex.DEFAULT_OPTIONS.autoUnlockTimeoutMs);
     });
 
     it('should use custom Promise', function(done: TDone): void {
