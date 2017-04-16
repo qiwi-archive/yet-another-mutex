@@ -31,7 +31,8 @@ export class Mutex {
      */
     public static readonly DEFAULT_OPTIONS: IMutexOptions = {
         intervalMs: 50,
-        autoUnlockTimeoutMs: 3000
+        autoUnlockTimeoutMs: 3000,
+        Promise: Promise
     };
 
     /**
@@ -45,20 +46,17 @@ export class Mutex {
      */
     protected options: IMutexOptions;
 
-    constructor(options?: IMutexOptions) {
-        const SelectedPromise = options.Promise || Promise;
-
-        if (!SelectedPromise) {
+    constructor(options: IMutexOptions = Mutex.DEFAULT_OPTIONS) {
+        this.options = {
+            Promise: options.Promise || Promise,
+            intervalMs: (options && options.intervalMs) || Mutex.DEFAULT_OPTIONS.intervalMs,
+            autoUnlockTimeoutMs: (options && options.autoUnlockTimeoutMs) || Mutex.DEFAULT_OPTIONS.autoUnlockTimeoutMs
+        };
+        if (!this.options.Promise) {
             throw new Error(
                 'Could not get native Promise in current env. Please pass custom Promise lib to constructor options'
             );
         }
-
-        this.options = {
-            Promise: SelectedPromise,
-            intervalMs: (options && options.intervalMs) || Mutex.DEFAULT_OPTIONS.intervalMs,
-            autoUnlockTimeoutMs: (options && options.autoUnlockTimeoutMs) || Mutex.DEFAULT_OPTIONS.autoUnlockTimeoutMs
-        };
     }
 
     /**

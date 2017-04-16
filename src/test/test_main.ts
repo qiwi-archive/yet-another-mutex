@@ -14,7 +14,7 @@ describe('mutex', function(): void {
     });
 
     it('should lock', function(done: TDone): void {
-        const mutex = new Mutex();
+        const mutex = new Mutex({Promise});
         const testCase: number = currentCase;
 
         const firstFunction = function(): Promise<void> {
